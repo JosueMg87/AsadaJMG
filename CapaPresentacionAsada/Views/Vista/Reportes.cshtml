@@ -1,0 +1,288 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Header-->
+<header class="bg-dark">
+    <div class="container px-1 px-lg-2 my-2">
+        <div class="text-center text-white">
+            <p class="lead fw-normal text-white-50 mb-0">Reportes de averias</p>
+        </div>
+    </div>
+</header>
+<!-- Section-->
+<section>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-12">
+                    <button type="button" class="btn btn-success" onclick="abrirModal(null)">Crear Nuevo Reporte</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container-fluid px-5 my-5">
+        <div class="row">
+            <div class="col-sm-12">
+                <div id="contenedor_Reportes" class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="FormModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="exampleModalLabel">Reportes Nueva</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input id="txtId" type="text" value="0" />
+                    <div class="col-sm-3">
+                        <div class="mb-2">
+                            <img id="img_producto" height="197" width="200" class="border rounded mx-auto d-block img-fluid" />
+                        </div>
+                        <div class="mb-2">
+                            <input class="form-control" type="file" id="fileProducto" accept="image/png, image/jpg, image/jpeg" onchange="mostrarImagen(this)" />
+                        </div>
+                    </div>
+                    <div class="row g-1">
+                        <div class="col-sm-6">
+                            <label for="txtTitulo" class="form-label">Titulo</label>
+                            <input type="text" class="form-control" id="txtTitulo" placeholder="Titulo">
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="txtDescripcion" class="form-label">Descripcion</label>
+                            <input type="text" class="form-control" id="txtDescripcion" placeholder="Descripcion">
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <div id="mensajeerror" class="alert alert-danger" role="alert">
+                                    A simple danger alert—check it out!
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Salir</button>
+                    <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+
+@section scripts{
+
+
+    <script>
+        var tabladata;
+        var filaSeleccionada;
+
+        function mostrarImagen(input) {
+            if (input.files) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $("#img_producto").attr("src", e.target.result).width(200).height(197)
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        //abre el modo modal para crear Reportes
+        function abrirModal(json) {
+            //para traer los valores vacios para el crear
+            $("#txtId").val(0)
+            $("#txtTitulo").val("");
+            $("#txtDescripcion").val("");
+            $("#mensajeerror").hide();
+            $("#img_producto").removeAttr("src");
+
+            //traer los valores en el editar
+            if (json != null) {
+                $("#txtId").val(json.IdReportes)
+                $("#txtTitulo").val(json.Titulo)
+                $("#txtDescripcion").val(json.Descripcion)
+                $("#img_producto").attr("src", `data:image/png;base64,${json.RutaImagen}`);
+            } else {
+
+            }
+            $("#FormModal").modal("show");
+        }
+
+
+        //EDITAR
+        //cada click en btn EDITAR va a realizar la accion en el body de la tabla
+        $("#tabla tbody").on("click", '.btn-editar', function () {
+            //obtener la fila donde se presiona
+            filaSeleccionada = $(this).closest("tr");
+            //obtener todos los datos de la fila
+            var data = tabladata.row(filaSeleccionada).data();
+            //al presionar btn abrir el modal y mostrar info ya registrada
+            abrirModal(data)
+        })
+
+
+        //ELIMINAR
+        //cada click en btn EDITAR va a realizar la accion en el body de la tabla
+        $("#tabla tbody").on("click", '.btn-eliminar', function () {
+            //obtener la fila donde se presiona
+            var Reportesleleccionada = $(this).closest("tr");
+            //obtener todos los datos de la fila
+            var data = tabladata.row(Reportesleleccionada).data();
+
+            swal({
+                title: "Esta Seguro?",
+                text: "Desea eliminar la Reportes?",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonClass: "btn-primary",
+                confirmButtonText: "Si",
+                cancelButtonText: "No",
+                closeOnConfirm: true
+            },
+                function () {
+                    jQuery.ajax({
+                        url: '@Url.Action("EliminarReportes", "Mantenedor")',
+                        type: "POST",
+                        data: JSON.stringify({ id: data.IdReportes }),
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+
+                            if (data.resultado) {
+                                //borrarlo de la lista
+                                tabladata.row(Reportesleleccionada).remove().draw();
+                            } else {
+                                swal("No se pudo eliminar", data.mensaje, "error")
+                            }
+                        },
+                        error: function (error) {
+                            console.log(error)
+                        }
+                    });
+                });
+
+            console.log(data);
+        })
+
+        $(document).ready(function () {
+            MostrarReportes()
+        })
+        function MostrarReportes() {
+            jQuery.ajax({
+                url: "@Url.Action("ListarReportes", "Vista")",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function(response) {
+                    $("#contenedor_Reportes").html("");
+                    $("#contenedor_Reportes").LoadingOverlay("hide");
+
+                    $.each(response.data, function(i, element) {
+                        $("<div>").addClass("col mb-5").append(
+                            $("<div>").addClass("card h-100").append(
+                                $("<img>").addClass("card-img-top").attr({
+                                    "src": "data:image/" + element.Extension + ";base64," + element.Base64,
+                                    "alt": element.Titulo
+                                }),
+                                $("<div>").addClass("card-body p-4").append(
+                                    $("<div>").addClass("text-center").append(
+                                        $("<h5>").addClass("fw-bolder").text(element.Titulo),
+                                        $("<p>").text(element.Descripcion)
+                                    )
+                                )
+                            )
+                        ).appendTo("#contenedor_Reportes");
+                    });
+                },
+                beforeSend: function() {
+                    $("#contenedor_Reportes").LoadingOverlay("show");
+                }
+            });
+        }
+        //GUARDAR
+        function Guardar() {
+            var ImagenSeleccionada = $("#fileProducto")[0].files[0];
+
+            var Reportes = {
+                IdReportes: $("#txtId").val(),
+                Titulo: $("#txtTitulo").val(),
+                Descripcion: $("#txtDescripcion").val()
+            }
+
+            var request = new FormData();
+            request.append("objeto", JSON.stringify(Reportes))
+            request.append("archivoImagen", ImagenSeleccionada)
+
+            jQuery.ajax({
+                url: '@Url.Action("GuardarReportes", "Vista")',
+                type: "POST",
+                data: request,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+
+                    $(".modal-body").LoadingOverlay("hide");
+
+                    //Reportes nuevo
+                    if (Reportes.IdReportes == 0) {
+                        if (data.resultado != 0) {
+                            $("#FormModal").modal("hide");
+                        } else {
+                            $("#mensajeerror").text(data.mensaje);
+                            $("#mensajeerror").show();
+                        }
+
+                    }
+                    //Reportes editar
+                    else {
+                        if (data.resultado) {
+                            tabladata.row(filaSeleccionada).data(Reportes).draw(false);
+                            filaSeleccionada = null;
+                            $("#FormModal").modal("hide");
+                        } else {
+                            $("#mensajeerror").text(data.mensaje);
+                            $("#mensajeerror").show();
+                        }
+                    }
+                },
+                error: function (error) {
+                    $(".modal-body").LoadingOverlay("hide");
+                    $("#mensajeerror").text("Error Ajax");
+                    $("#mensajeerror").show();
+                },
+                beforeSend: function () {
+                    // Let's call it 2 times just for fun...  https://gasparesganga.com/labs/jquery-loading-overlay/
+                    $(".modal-body").LoadingOverlay("show", {
+                        imageResizeFactor: 2,
+                        text: "Cargando...",
+                        size: 14
+                    });
+
+                }
+                })
+
+
+        }
+
+
+    </script>
+
+
+
+}

@@ -1,0 +1,80 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Header-->
+<header class="bg-dark">
+    <div class="container px-1 px-lg-2 my-2">
+        <div class="text-center text-white">
+            <p class="lead fw-normal text-white-50 mb-0">Historial de averias</p>
+        </div>
+    </div>
+</header>
+<!-- Section-->
+<section>
+    <div class="container-fluid px-5 my-5">
+        <div class="row">
+            <div class="col-sm-12">
+                <div id="contenedor_Historial" class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</section>
+
+
+@section scripts{
+
+    <script>
+        $(document).ready(function () {
+            MostrarHistorial()
+        })
+        function MostrarHistorial() {
+            jQuery.ajax({
+                url: "@Url.Action("ListarHistorial", "Vista")",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function(response) {
+                    $("#contenedor_Historial").html("");
+                    $("#contenedor_Historial").LoadingOverlay("hide");
+
+                    $.each(response.data, function(i, element) {
+                        $("<div>").addClass("col mb-5").append(
+                            $("<div>").addClass("card h-100").append(
+                                $("<img>").addClass("card-img-top").attr({
+                                    "src": "data:image/" + element.Extension + ";base64," + element.Base64,
+                                    "alt": element.Titulo
+                                }),
+                                $("<div>").addClass("card-body p-4").append(
+                                    $("<div>").addClass("text-center").append(
+                                        $("<h5>").addClass("fw-bolder").text(element.Titulo),
+                                        $("<p>").text(element.Descripcion)
+                                    )
+                                )
+                            )
+                        ).appendTo("#contenedor_Historial");
+                    });
+                },
+                beforeSend: function() {
+                    $("#contenedor_Historial").LoadingOverlay("show");
+                }
+            });
+        }
+
+        // Llamar a la función para mostrar los Historial al cargar la página
+        $(document).ready(function () {
+            MostrarHistorial();
+        });
+
+
+    </script>
+
+
+
+}

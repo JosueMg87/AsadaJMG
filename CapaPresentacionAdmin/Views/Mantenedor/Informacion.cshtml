@@ -1,0 +1,230 @@
+﻿
+@{
+    ViewBag.Title = "Informacion";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<hr />
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-users me-1"></i> Lista de Información
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <button type="button" class="btn btn-success" onclick="abrirModal(null)">Crear Nuevo</button>
+            </div>
+        </div>
+        <hr />
+        <table id="tabla" class="display cell-border" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Opciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="FormModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="exampleModalLabel">Información de la ASADA</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input id="txtId" type="hidden" value="0" />
+                <div class="row g-1">
+                    <div class="col-sm-9">
+                        <label for="txtNombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="txtNombre" placeholder="Nombre">
+                    </div>
+                    <div class="col-sm-9">
+                        <label for="txtDescripcion" class="form-label">Descripción</label>
+                        <input type="text" class="form-control" id="txtDescripcion" placeholder="Descripción">
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <div id="mensajeerror" class="alert alert-danger" role="alert">
+                                A simple danger alert—check it out!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Salir</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts{
+    <script>
+        var tabladata;
+        var filaSeleccionada;
+        tabladata = $("#tabla").DataTable({
+            responsive: true,
+            ordering: false,
+            "ajax": {
+                url: '@Url.Action("ListarInformacion", "Mantenedor")',
+                type: "GET",
+                dataType: "json"
+            },
+            "columns": [
+                { "data": "Nombre" },
+                { "data": "Descripcion" },
+                {
+                    "defaultContent": '<button type="button" class="btn btn-primary btn-sm btn-editar"><i class="fas fa-pen"></i></button>'
+                        + '<button type="button" class="btn btn-danger btn-sm ms-2 btn-eliminar"><i class="fas fa-trash"></i></button>',
+                    "orderable": false,
+                    "searchable": false,
+                    "width": "90px",
+                }
+            ],
+            "language": {
+                "url": "https://cdn.datatables.net/plug-ins/1.11.3/i18n/es_es.json"
+            }
+
+        });
+
+        //abre el modo modal para crear Informacion
+        function abrirModal(json) {
+            //para traer los valores vacios para el crear
+            $("#txtId").val(0)
+            $("#txtNombre").val("");
+            $("#txtDescripcion").val("");
+            $("#txtRedesSociales").val("");
+            $("#mensajeerror").hide();
+
+            //traer los valores en el editar
+            if (json != null) {
+                $("#txtId").val(json.IdInformacion)
+                $("#txtNombre").val(json.Nombre)
+                $("#txtDescripcion").val(json.Descripcion)
+            } else {
+
+            }
+            $("#FormModal").modal("show");
+        }
+
+        //EDITAR
+        //cada click en btn EDITAR va a realizar la accion en el body de la tabla
+        $("#tabla tbody").on("click", '.btn-editar', function () {
+            //obtener la fila donde se presiona
+            filaSeleccionada = $(this).closest("tr");
+            //obtener todos los datos de la fila
+            var data = tabladata.row(filaSeleccionada).data();
+            //al presionar btn abrir el modal y mostrar info ya registrada
+            abrirModal(data)
+        })
+
+        //ELIMINAR
+        //cada click en btn EDITAR va a realizar la accion en el body de la tabla
+        $("#tabla tbody").on("click", '.btn-eliminar', function () {
+            //obtener la fila donde se presiona
+            var Informacionleleccionada = $(this).closest("tr");
+            //obtener todos los datos de la fila
+            var data = tabladata.row(Informacionleleccionada).data();
+            swal({
+                title: "Esta Seguro?",
+                text: "Desea eliminar la Informacion?",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonClass: "btn-primary",
+                confirmButtonText: "Si",
+                cancelButtonText: "No",
+                closeOnConfirm: true
+            },
+                function () {
+                    jQuery.ajax({
+                        url: '@Url.Action("EliminarInformacion", "Mantenedor")',
+                        type: "POST",
+                        data: JSON.stringify({ id: data.IdInformacion }),
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+
+                            if (data.resultado) {
+                                //borrarlo de la lista
+                                tabladata.row(Informacionleleccionada).remove().draw();
+                            } else {
+                                swal("No se pudo eliminar", data.mensaje, "error")
+                            }
+                        },
+                        error: function (error) {
+                            console.log(error)
+                        }
+                    });
+                });
+
+            console.log(data);
+        })
+
+        //GUARDAR
+        function Guardar() {
+            var Informacion = {
+                IdInformacion: $("#txtId").val(),
+                Nombre: $("#txtNombre").val(),
+                Descripcion: $("#txtDescripcion").val(),
+            }
+            jQuery.ajax({
+                url: '@Url.Action("GuardarInformacion", "Mantenedor")',
+                type: "POST",
+                data: JSON.stringify({ objeto: Informacion }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    $(".modal-body").LoadingOverlay("hide");
+                    //Informacion nuevo
+                    if (Informacion.IdInformacion == 0) {
+                        if (data.resultado != 0) {
+                            Informacion.IdInformacion = data.resultado
+                            tabladata.row.add(Informacion).draw(false)
+                            $("#FormModal").modal("hide");
+                        } else {
+                            $("#mensajeerror").text(data.mensaje);
+                            $("#mensajeerror").show();
+                        }
+                    }
+                    //Informacion editar
+                    else {
+                        if (data.resultado) {
+                            tabladata.row(filaSeleccionada).data(Informacion).draw(false);
+                            filaSeleccionada = null;
+                            $("#FormModal").modal("hide");
+                        } else {
+                            $("#mensajeerror").text(data.mensaje);
+                            $("#mensajeerror").show();
+                        }
+                    }
+                },
+                error: function (error) {
+                    $(".modal-body").LoadingOverlay("hide");
+                    $("#mensajeerror").text("Error Ajax");
+                    $("#mensajeerror").show();
+                },
+                beforeSend: function () {
+                    // Let's call it 2 times just for fun...  https://gasparesganga.com/labs/jquery-loading-overlay/
+                    $(".modal-body").LoadingOverlay("show", {
+                        imageResizeFactor: 2,
+                        text: "Cargando...",
+                        size: 14
+                    });
+                }
+             })
+        }
+
+
+    </script>
+
+
+}
+

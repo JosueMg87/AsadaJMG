@@ -1,0 +1,61 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Reestablecer</title>
+    <link href="~/Content/Site.css" rel="stylesheet" />
+</head>
+<body class="bg-primary">
+    <div id="layoutAuthentication">
+        <div id="layoutAuthentication_content">
+            <main>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-5">
+                            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                <div class="card-header"><h3 class="text-center font-weight-light my-4">Recuperación de contraseña</h3></div>
+                                <div class="card-body">
+                                    <div class="small mb-3 text-muted">Ingrese su dirección de correo electrónico y le enviaremos su nueva contraseña</div>
+                                    <form action="@Url.Action("Reestablecer", "Acceso")" method="post">
+                                        <div class="form-floating mb-3">
+                                            <input class="form-control" name="correo" type="email" />
+                                            <label for="inputEmail">Correo Electrónico</label>
+                                        </div>
+                                        @{
+                                            if (ViewBag.Error != null)
+                                            {
+                                                <div class="form-floating mb-3">
+                                                    <div class="alert alert-danger" role="alert">
+                                                        @ViewBag.Error
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                            <a class="small" href="@Url.Action("Index","Acceso")">Volver al inicio</a>
+                                            <button class="btn btn-primary" type="submit">Reestablecer la contraseña</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                @*<div class="card-footer text-center py-3">
+                                    <div class="small"><a href="register.html">Need an account? Sign up!</a></div>
+                                </div>*@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        <div class="bg-light text-dark text-center py-3">
+            <p class="mb-0">&copy; 2024 JMG Technology. Todos los derechos reservados.</p>
+        </div>
+    </div>
+    <script src="~/Scripts/bootstrap.bundle.js"></script>
+</body>
+</html>

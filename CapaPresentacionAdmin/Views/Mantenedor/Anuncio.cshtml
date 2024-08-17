@@ -1,0 +1,262 @@
+﻿
+@{
+    ViewBag.Title = "Anuncio";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<hr />
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-users me-1"></i> Lista de Anuncios
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <button type="button" class="btn btn-success" onclick="abrirModal(null)">Crear Nuevo</button>
+            </div>
+        </div>
+        <hr />
+        <table id="tabla" class="display cell-border" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Descripción</th>
+                    <th>Opciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="FormModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="exampleModalLabel">Anuncio Nuevo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input id="txtId" type="hidden" value="0" />
+                <div class="col-sm-3">
+                    <div class="mb-2">
+                        <img id="img_producto" height="197" width="200" class="border rounded mx-auto d-block img-fluid" />
+                    </div>
+                    <div class="mb-2">
+                        <input class="form-control" type="file" id="fileProducto" accept="image/png, image/jpg, image/jpeg" onchange="mostrarImagen(this)" />
+                    </div>
+                </div>
+                <div class="row g-1">
+                    <div class="col-sm-6">
+                        <label for="txtTitulo" class="form-label">Titulo</label>
+                        <input type="text" class="form-control" id="txtTitulo" placeholder="Título">
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="txtDescripcion" class="form-label">Descripcion</label>
+                        <input type="text" class="form-control" id="txtDescripcion" placeholder="Descripción">
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <div id="mensajeerror" class="alert alert-danger" role="alert">
+                                A simple danger alert—check it out!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Salir</button>
+                <button type="button" class="btn btn-primary" onclick="Guardar()">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@section scripts{
+    <script>
+        var tabladata;
+        var filaSeleccionada;
+        function mostrarImagen(input) {
+            if (input.files) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $("#img_producto").attr("src", e.target.result).width(200).height(197)
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        tabladata = $("#tabla").DataTable({
+            responsive: true,
+            ordering: false,
+            "ajax": {
+                url: '@Url.Action("ListarAnuncio", "Mantenedor")',
+                type: "GET",
+                dataType: "json"
+            },
+            "columns": [
+                { "data": "Titulo" },
+                { "data": "Descripcion" },
+                {
+                    "defaultContent": '<button type="button" class="btn btn-primary btn-sm btn-editar"><i class="fas fa-pen"></i></button>'
+                        + '<button type="button" class="btn btn-danger btn-sm ms-2 btn-eliminar"><i class="fas fa-trash"></i></button>',
+                    "orderable": false,
+                    "searchable": false,
+                    "width": "90px",
+                }
+            ],
+            "language": {
+                "url": "https://cdn.datatables.net/plug-ins/1.11.3/i18n/es_es.json"
+            }
+
+        });
+
+        //abre el modo modal para crear Anuncio
+        function abrirModal(json) {
+            //para traer los valores vacios para el crear
+            $("#txtId").val(0)
+            $("#txtTitulo").val("");
+            $("#txtDescripcion").val("");
+            $("#mensajeerror").hide();
+            $("#img_producto").removeAttr("src");
+
+            //traer los valores en el editar
+            if (json != null) {
+                $("#txtId").val(json.IdAnuncio)
+                $("#txtTitulo").val(json.Titulo)
+                $("#txtDescripcion").val(json.Descripcion)
+                $("#img_producto").attr("src", `data:image/png;base64,${json.RutaImagen}`);
+            } else {
+
+            }
+            $("#FormModal").modal("show");
+        }
+
+
+        //EDITAR
+        //cada click en btn EDITAR va a realizar la accion en el body de la tabla
+        $("#tabla tbody").on("click", '.btn-editar', function () {
+            //obtener la fila donde se presiona
+            filaSeleccionada = $(this).closest("tr");
+            //obtener todos los datos de la fila
+            var data = tabladata.row(filaSeleccionada).data();
+            //al presionar btn abrir el modal y mostrar info ya registrada
+            abrirModal(data)
+        })
+
+
+        //ELIMINAR
+        //cada click en btn EDITAR va a realizar la accion en el body de la tabla
+        $("#tabla tbody").on("click", '.btn-eliminar', function () {
+            //obtener la fila donde se presiona
+            var Anuncioleleccionada = $(this).closest("tr");
+            //obtener todos los datos de la fila
+            var data = tabladata.row(Anuncioleleccionada).data();
+
+            swal({
+                title: "Esta Seguro?",
+                text: "Desea eliminar la Anuncio?",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonClass: "btn-primary",
+                confirmButtonText: "Si",
+                cancelButtonText: "No",
+                closeOnConfirm: true
+            },
+                function () {
+                    jQuery.ajax({
+                        url: '@Url.Action("EliminarAnuncio", "Mantenedor")',
+                        type: "POST",
+                        data: JSON.stringify({ id: data.IdAnuncio }),
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        success: function (data) {
+
+                            if (data.resultado) {
+                                //borrarlo de la lista
+                                tabladata.row(Anuncioleleccionada).remove().draw();
+                            } else {
+                                swal("No se pudo eliminar", data.mensaje, "error")
+                            }
+                        },
+                        error: function (error) {
+                            console.log(error)
+                        }
+                    });
+                });
+
+            console.log(data);
+        })
+
+
+        //GUARDAR
+        function Guardar() {
+            var ImagenSeleccionada = $("#fileProducto")[0].files[0];
+
+            var Anuncio = {
+                IdAnuncio: $("#txtId").val(),
+                Titulo: $("#txtTitulo").val(),
+                Descripcion: $("#txtDescripcion").val()
+            }
+
+            var request = new FormData();
+            request.append("objeto", JSON.stringify(Anuncio));
+            request.append("archivoImagen", ImagenSeleccionada);
+
+            jQuery.ajax({
+                url: '@Url.Action("GuardarAnuncio", "Mantenedor")',
+                type: "POST",
+                data: request,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+
+                    $(".modal-body").LoadingOverlay("hide");
+
+                    if (data.operacion_exitosa) {
+                        //Anuncio nuevo
+                        if (Anuncio.IdAnuncio == 0) {
+                            Anuncio.IdAnuncio = data.idGenerado;
+                            tabladata.row.add(Anuncio).draw(false);
+                        }
+                        //Anuncio editar
+                        else {
+                            tabladata.row(filaSeleccionada).data(Anuncio).draw(false);
+                            filaSeleccionada = null;
+                        }
+
+                        $("#FormModal").modal("hide");
+
+                    } else {
+                        $("#mensajeerror").text(data.mensaje);
+                        $("#mensajeerror").show();
+                    }
+                },
+                error: function (error) {
+                    $(".modal-body").LoadingOverlay("hide");
+                    $("#mensajeerror").text("Error Ajax");
+                    $("#mensajeerror").show();
+                },
+                beforeSend: function () {
+                    $(".modal-body").LoadingOverlay("show", {
+                        imageResizeFactor: 2,
+                        text: "Cargando...",
+                        size: 14
+                    });
+                }
+            });
+        }
+
+
+
+
+    </script>
+
+
+}
+
